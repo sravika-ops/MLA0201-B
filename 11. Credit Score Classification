@@ -1,0 +1,24 @@
+
+
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, accuracy_score
+
+X = np.array([[25, 50000], [30, 80000], [35, 75000], [22, 30000], [40, 100000], [28, 60000]])
+y = np.array([0, 1, 1, 0, 1, 0])  # 0 represents bad credit, 1 represents good credit
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+clf = DecisionTreeClassifier()
+
+clf.fit(X_train, y_train)
+
+y_pred = clf.predict(X_test)
+
+accuracy = accuracy_score(y_test, y_pred)
+classification_rep = classification_report(y_test, y_pred, target_names=['Bad Credit', 'Good Credit'])
+
+print("Accuracy:", accuracy)
+print("Classification Report:")
+print(classification_rep)
