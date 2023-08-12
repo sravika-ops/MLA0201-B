@@ -1,0 +1,70 @@
+
+import numpy as np
+from scipy.stats import multivariate_normal
+
+np.random.seed(0)
+true_mu1 = np.array([2, 2])
+true_cov1 = np.array([[1, 0.5], [0.5, 1]])
+true_mu2 = np.array([7, 7])
+true_cov2 = np.array([[1, -0.5], [-0.5, 1]])
+true_weights = [0.4, 0.6]
+
+n_samples = 300
+n_features = 2
+X = np.concatenate([
+    np.random.multivariate_normal(true_mu1, true_cov1, int(n_samples * true_weights[0])),
+    np.random.multivariate_normal(true_mu2, true_cov2, int(n_samples * true_weights[1]))
+], axis=0)
+
+n_clusters = 2
+
+def e_step(X, mus, sigmas, weights):
+    responsibilities = []
+    for i in range(n_clusters):
+        pdf = multivariate_normal.pdf(X, mean=mus[i], cov=sigmas[i])
+        responsibilities.append(weights[i] * pdf)
+    responsibilities = np.array(responsibilities)
+    responsibilities /= np.sum(responsibilities, axis=0)
+    return responsibilities
+
+def m_step(X, responsibilities):
+    n_samples, _ = X.shape
+    mus = []
+    sigmas = []
+    weights = []
+    for i in range(n_clusters):
+        r_sum = np.sum(responsibilities[i])
+        weight = r_sum / n_samples
+        mu = np.sum(responsibilities[i][:, np.newaxis] * X, axis=0) / r_sum
+        sigma = (X - mu).T.dot((X - mu) * responsibilities[i][:, np.newaxis]) / r_sum
+        mus.append(mu)
+        sigmas.append(sigma)
+        weights.append(weight)
+    return np.array(mus), np.array(sigmas), np.array(weights)
+
+initial_weights = np.ones(n_clusters) / n_clusters
+initial_mus = np.random.rand(n_clusters, n_features) * np.max(X, axis=0)
+initial_sigmas = np.array([np.eye(n_features)] * n_clusters)
+
+mus = initial_mus
+sigmas = initial_sigmas
+weights = initial_weights
+
+max_iters = 100
+tolerance = 1e-6
+
+for i in range(max_iters):
+    prev_mus = mus.copy()
+    responsibilities = e_step(X, mus, sigmas, weights)
+    mus, sigmas, weights = m_step(X, responsibilities)
+
+    if np.allclose(prev_mus, mus, atol=tolerance):
+        print(f"Converged after {i + 1} iterations.")
+        break
+
+print("Estimated means:")
+print(mus)
+print("Estimated covariances:")
+print(sigmas)
+print("Estimated weights:")
+print(weights)
